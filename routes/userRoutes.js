@@ -1,7 +1,7 @@
 const express = require('express');
 const User = require('../models/User');
 const router = express.Router();
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs'); // Use bcryptjs instead of bcrypt
 const jwt = require('jsonwebtoken');
 
 router.get('/', (req, res) => {
@@ -10,43 +10,44 @@ router.get('/', (req, res) => {
 
 router.post('/register', async (req, res) => {
     try {
-    const { name, email, password } = req.body;
+        const { name, email, password } = req.body;
 
-        const user = new User({ name, email, password });
+        // Hash the password using bcryptjs
+        const hashedPassword = await bcryptjs.hash(password, 10); // 10 is the salt rounds
+
+        const user = new User({ name, email, password: hashedPassword }); // Store hashed password
         await user.save();
         res.status(201).send({ user, message: "User Created Successfully" });
-    }
-
-    catch (err) {
+    } catch (err) {
         res.status(400).send({ error: err });
     }
-
 });
+
 router.post('/login', async (req, res) => {
-   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email });
 
-    if(!user){
-        throw new Error('Unable to login , invalid credentials');
-    }
+        if (!user) {
+            throw new Error('Unable to login, invalid credentials');
+        }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+        // Compare the password with the hashed password using bcryptjs
+        const isMatch = await bcryptjs.compare(password, user.password);
 
-    if(!isMatch){
-        throw new Error('Unable to login , invalid credentials');
-    }
+        if (!isMatch) {
+            throw new Error('Unable to login, invalid credentials');
+        }
 
-    const token = jwt.sign({
-        _id: user._id.toString()
-    }, process.env.JWT_SECRET_KEY );
+        const token = jwt.sign({
+            _id: user._id.toString()
+        }, process.env.JWT_SECRET_KEY);
 
-    res.send({ user, token , message: "Logged in successfully"});
-   }
-    catch (err) {
+        res.send({ user, token, message: "Logged in successfully" });
+    } catch (err) {
         res.status(400).send({ error: err });
     }
- });
+});
 
 // register a user
 // login a user
