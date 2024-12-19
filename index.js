@@ -4,6 +4,8 @@ const cors = require('cors');  // Import cors package
 const app = express();
 const userRoutes = require('./routes/userRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+const mongoose = require('mongoose');
+
 
 require('dotenv').config();
 require('./db');
